@@ -1,0 +1,38 @@
+{
+  "name": "taskwarrior-libx",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm typecheck && vite build"
+  },
+  "keywords": [
+    "taskwarrior",
+    "typescript",
+    "library"
+  ],
+  "author": "https://github.com/danjvarela",
+  "license": "ISC",
+  "type": "module",
+  "browser": false,
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.1"
+  },
+  "dependencies": {
+    "vite-plugin-dts": "^4.5.4"
+  }
+}
