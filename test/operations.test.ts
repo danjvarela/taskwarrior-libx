@@ -20,6 +20,7 @@ import {
   annotateTask,
   denotateTasks,
   denotateTask,
+  importTasks,
 } from "../src/operations";
 import type { Config } from "../src/config";
 
@@ -604,5 +605,63 @@ describe("stopTasks", () => {
   it("returns an empty array when no tasks match the filter", async () => {
     const stopped = await stopTasks("project:Nonexistent", config);
     expect(stopped).toEqual([]);
+  });
+});
+
+describe("importTasks", () => {
+  it("returns an empty array when given an empty JSON array", async () => {
+    const result = await importTasks("[]", config);
+    expect(result).toEqual([]);
+  });
+
+  it("creates new tasks from a JSON array", async () => {
+    const json = JSON.stringify([
+      { description: "Imported task one" },
+      { description: "Imported task two" },
+    ]);
+
+    const result = await importTasks(json, config);
+
+    expect(result).toHaveLength(2);
+    expect(result.map((t) => t.description)).toEqual(
+      expect.arrayContaining(["Imported task one", "Imported task two"]),
+    );
+  });
+
+  it("returns tasks with the expected shape", async () => {
+    const json = JSON.stringify([{ description: "Shape check task" }]);
+
+    const [task] = await importTasks(json, config);
+
+    expect(task.uuid).toBeDefined();
+    expect(task.description).toBe("Shape check task");
+    expect(task.status).toBe("pending");
+  });
+
+  it("updates an existing task when the UUID matches", async () => {
+    const created = await createTask("Original description", config);
+
+    const json = JSON.stringify([
+      {
+        uuid: created.uuid,
+        description: "Updated description",
+        status: "pending",
+        entry: created.entry,
+      },
+    ]);
+
+    const [updated] = await importTasks(json, config);
+
+    expect(updated.uuid).toBe(created.uuid);
+    expect(updated.description).toBe("Updated description");
+  });
+
+  it("creates tasks with a specified UUID", async () => {
+    const uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+    const json = JSON.stringify([{ uuid, description: "UUID task" }]);
+
+    const [task] = await importTasks(json, config);
+
+    expect(task.uuid).toBe(uuid);
   });
 });

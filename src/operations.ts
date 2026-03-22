@@ -1,4 +1,4 @@
-import { execFile } from "child_process";
+import { execFile, spawn } from "child_process";
 import { promisify } from "util";
 import type { Task } from "./task.js";
 import type { Config } from "./config.js";
@@ -197,11 +197,9 @@ export async function doneTask(
   const [taskToComplete] = await exportTasks([idOrUUID], config);
   if (!taskToComplete) return null;
 
-  await execFileAsync(
-    "task",
-    ["rc.confirmation=off", idOrUUID, "done"],
-    { env: buildEnv(config) },
-  );
+  await execFileAsync("task", ["rc.confirmation=off", idOrUUID, "done"], {
+    env: buildEnv(config),
+  });
 
   const [completed] = await exportTasks([taskToComplete.uuid], config);
   return completed;
@@ -234,11 +232,9 @@ export async function startTask(
   const [taskToStart] = await exportTasks([idOrUUID], config);
   if (!taskToStart) return null;
 
-  await execFileAsync(
-    "task",
-    ["rc.confirmation=off", idOrUUID, "start"],
-    { env: buildEnv(config) },
-  );
+  await execFileAsync("task", ["rc.confirmation=off", idOrUUID, "start"], {
+    env: buildEnv(config),
+  });
 
   const [started] = await exportTasks([idOrUUID], config);
   return started;
@@ -271,11 +267,9 @@ export async function stopTask(
   const [taskToStop] = await exportTasks([idOrUUID], config);
   if (!taskToStop) return null;
 
-  await execFileAsync(
-    "task",
-    ["rc.confirmation=off", idOrUUID, "stop"],
-    { env: buildEnv(config) },
-  );
+  await execFileAsync("task", ["rc.confirmation=off", idOrUUID, "stop"], {
+    env: buildEnv(config),
+  });
 
   const [stopped] = await exportTasks([idOrUUID], config);
   return stopped;
@@ -309,3 +303,29 @@ export async function deleteTask(
   });
 }
 
+export async function importTasks(
+  json: string,
+  config?: Config,
+): Promise<Task[]> {
+  if (json === "[]") return [];
+
+  const stdout = await new Promise<string>((resolve, reject) => {
+    const proc = spawn("task", ["import"], { env: buildEnv(config) });
+    let out = "";
+    proc.stdout.on("data", (d: Buffer) => (out += d.toString()));
+    proc.on("close", (code) =>
+      code === 0
+        ? resolve(out)
+        : reject(new Error(`task import exited ${code}`)),
+    );
+    proc.on("error", reject);
+    proc.stdin.write(json);
+    proc.stdin.end();
+  });
+
+  const uuids = [...stdout.matchAll(/^\s+(?:add|mod)\s+([a-f0-9-]{36})/gm)].map(
+    (m) => m[1],
+  );
+
+  return await exportTasks(uuids, config);
+}

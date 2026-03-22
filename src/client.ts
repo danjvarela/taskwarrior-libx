@@ -16,6 +16,7 @@ import {
   annotateTask,
   denotateTasks,
   denotateTask,
+  importTasks,
 } from "./operations.js";
 import type { Config } from "./config.js";
 
@@ -268,6 +269,18 @@ export function createTaskwarriorClient(config: Config) {
         ...config,
         ...customConfig,
       });
+    },
+
+    /**
+     * Imports tasks from a JSON string (a single task object or an array of task objects).
+     * Tasks without a UUID are created; tasks with an existing UUID are updated.
+     *
+     * @param json - A JSON string of a single task object or an array of task objects.
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to an array of the imported/updated tasks.
+     */
+    async importTasks(json: string, customConfig?: Config) {
+      return await importTasks(json, { ...config, ...customConfig });
     },
   };
 }
