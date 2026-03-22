@@ -22,6 +22,7 @@ import {
   denotateTask,
   importTasks,
   duplicateTask,
+  purgeTasks,
 } from "../src/operations";
 import type { Config } from "../src/config";
 
@@ -714,5 +715,51 @@ describe("duplicateTask", () => {
   it("returns null when the task does not exist", async () => {
     const result = await duplicateTask("00000000-0000-0000-0000-000000000000", undefined, config);
     expect(result).toBeNull();
+  });
+});
+
+describe("purgeTasks", () => {
+  it("returns the UUIDs of purged tasks", async () => {
+    const task = await createTask("Buy milk", config);
+    await deleteTasks(task.uuid, config);
+
+    const purged = await purgeTasks("status:deleted", config);
+
+    expect(purged).toContain(task.uuid);
+  });
+
+  it("permanently removes tasks from the database", async () => {
+    const task = await createTask("Buy milk", config);
+    await deleteTasks(task.uuid, config);
+    await purgeTasks("status:deleted", config);
+
+    const found = await getTask(task.uuid, config);
+    expect(found).toBeNull();
+  });
+
+  it("only purges tasks matching the filter", async () => {
+    const taskA = await createTask("Buy milk project:Home", config);
+    const taskB = await createTask("Walk the dog project:Work", config);
+    await deleteTasks("project:Home", config);
+    await deleteTasks("project:Work", config);
+
+    await purgeTasks("status:deleted project:Home", config);
+
+    const foundA = await getTask(taskA.uuid, config);
+    const foundB = await getTask(taskB.uuid, config);
+    expect(foundA).toBeNull();
+    expect(foundB).not.toBeNull();
+  });
+
+  it("returns an empty array when no tasks match the filter", async () => {
+    const purged = await purgeTasks("status:deleted", config);
+    expect(purged).toEqual([]);
+  });
+
+  it("returns an empty array when tasks are not deleted", async () => {
+    await createTask("Buy milk", config);
+
+    const purged = await purgeTasks("status:pending", config);
+    expect(purged).toEqual([]);
   });
 });

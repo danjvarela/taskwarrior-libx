@@ -355,3 +355,21 @@ export async function duplicateTask(
   const [duplicatedTask] = await exportTasks([duplicatedTaskUUID], config);
   return duplicatedTask;
 }
+
+export async function purgeTasks(filters: string, config?: Config) {
+  const filtersSplit = filters.split(" ");
+  const tasksToPurge = await exportTasks(filtersSplit, config);
+  const uuidsToPurge = tasksToPurge.map((t) => t.uuid);
+
+  if (uuidsToPurge.length === 0) return [];
+
+  await execFileAsync("task", [
+    "rc.confirmation=off",
+    ...filtersSplit,
+    "purge",
+  ], { env: buildEnv(config) });
+
+  const survivingTasks = await exportTasks(uuidsToPurge, config);
+  const survivingUUIDs = new Set(survivingTasks.map((t) => t.uuid));
+  return uuidsToPurge.filter((u) => !survivingUUIDs.has(u));
+}

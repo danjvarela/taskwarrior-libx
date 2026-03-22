@@ -18,6 +18,7 @@ import {
   denotateTask,
   importTasks,
   duplicateTask,
+  purgeTasks,
 } from "./operations.js";
 import type { Config } from "./config.js";
 
@@ -303,6 +304,19 @@ export function createTaskwarriorClient(config: Config) {
         ...config,
         ...customConfig,
       });
+    },
+
+    /**
+     * Permanently removes all deleted tasks matching the given filter from the database.
+     * Tasks must already have `status:deleted` before they can be purged.
+     * Purge is local-only — changes are not synced.
+     *
+     * @param filters - A Taskwarrior filter expression to select tasks to purge (e.g. `"status:deleted project:Work"`).
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to an array of UUIDs that were successfully purged.
+     */
+    async purgeTasks(filters: string, customConfig?: Config) {
+      return await purgeTasks(filters, { ...config, ...customConfig });
     },
   };
 }
