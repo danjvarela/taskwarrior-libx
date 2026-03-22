@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/danjvarela/taskwarrior-libx/compare/v1.1.0...v1.2.0) (2026-03-22)
+
+
+### Features
+
+* initial release ([45af0cc](https://github.com/danjvarela/taskwarrior-libx/commit/45af0cc19eee5b147b10b48fbd2456d2990a5d91))
+
 # [1.1.0](https://github.com/danjvarela/taskwarrior-libx/compare/v1.0.0...v1.1.0) (2026-03-22)
 
 
