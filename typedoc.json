@@ -1,0 +1,11 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "name": "taskwarrior-libx",
+  "includeVersion": true,
+  "readme": "none",
+  "plugin": ["typedoc-plugin-markdown"],
+  "categorizeByGroup": true,
+  "groupOrder": ["Functions", "Interfaces", "Type Aliases", "*"],
+  "disableSources": true
+}
