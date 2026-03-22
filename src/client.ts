@@ -4,6 +4,8 @@ import {
   createTask,
   modifyTasks,
   modifyTask,
+  deleteTasks,
+  deleteTask,
 } from "./operations.js";
 import type { Config } from "./config.js";
 
@@ -85,6 +87,29 @@ export function createTaskwarriorClient(config: Config) {
         ...config,
         ...customConfig,
       });
+    },
+
+    /**
+     * Deletes all tasks matching the given filter string.
+     *
+     * @param filters - A Taskwarrior filter expression to select tasks to delete (e.g. `"project:work status:pending"`).
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise that resolves when the deletion is complete.
+     */
+    async deleteTasks(filters: string, customConfig?: Config) {
+      return await deleteTasks(filters, { ...config, ...customConfig });
+    },
+
+    /**
+     * Deletes a single task identified by its numeric ID or UUID.
+     * Does nothing if the task does not exist.
+     *
+     * @param idOrUUID - The task's numeric ID or UUID string.
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise that resolves when the deletion is complete.
+     */
+    async deleteTask(idOrUUID: string, customConfig?: Config): Promise<void> {
+      return await deleteTask(idOrUUID, { ...config, ...customConfig });
     },
   };
 }

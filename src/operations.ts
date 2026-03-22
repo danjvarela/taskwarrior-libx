@@ -98,3 +98,31 @@ export async function modifyTask(
   const [updated] = await exportTasks([idOrUUID], config);
   return updated;
 }
+
+export async function deleteTasks(
+  filters: string,
+  config?: Config,
+): Promise<void> {
+  const filtersSplit = filters.split(" ");
+
+  const tasksToBeDeleted = await exportTasks(filtersSplit, config);
+  if (!tasksToBeDeleted.length) return;
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", ...filtersSplit, "delete"],
+    { env: buildEnv(config) },
+  );
+}
+
+export async function deleteTask(
+  idOrUUID: string,
+  config?: Config,
+): Promise<void> {
+  const [taskToDelete] = await exportTasks([idOrUUID], config);
+  if (!taskToDelete) return;
+
+  await execFileAsync("task", ["rc.confirmation=off", idOrUUID, "delete"], {
+    env: buildEnv(config),
+  });
+}

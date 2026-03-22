@@ -2,7 +2,15 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
-import { getTasks, getTask, createTask, modifyTasks, modifyTask } from "../src/operations";
+import {
+  getTasks,
+  getTask,
+  createTask,
+  modifyTasks,
+  modifyTask,
+  deleteTasks,
+  deleteTask,
+} from "../src/operations";
 import type { Config } from "../src/config";
 
 let config: Config;
@@ -130,7 +138,11 @@ describe("modifyTasks", () => {
   });
 
   it("returns an empty array when no tasks match the filter", async () => {
-    const modified = await modifyTasks("project:Nonexistent", "priority:H", config);
+    const modified = await modifyTasks(
+      "project:Nonexistent",
+      "priority:H",
+      config,
+    );
     expect(modified).toEqual([]);
   });
 
@@ -154,8 +166,9 @@ describe("modifyTask", () => {
 
     const modified = await modifyTask(created.uuid, "priority:H", config);
 
-    expect(modified.uuid).toBe(created.uuid);
-    expect(modified.priority).toBe("H");
+    expect(modified).not.toBeNull();
+    expect(modified!.uuid).toBe(created.uuid);
+    expect(modified!.priority).toBe("H");
   });
 
   it("returns the modified task with updated attributes by numeric id", async () => {
@@ -163,8 +176,9 @@ describe("modifyTask", () => {
 
     const modified = await modifyTask(String(created.id), "priority:L", config);
 
-    expect(modified.uuid).toBe(created.uuid);
-    expect(modified.priority).toBe("L");
+    expect(modified).not.toBeNull();
+    expect(modified!.uuid).toBe(created.uuid);
+    expect(modified!.priority).toBe("L");
   });
 
   it("can modify multiple attributes at once", async () => {
@@ -176,8 +190,9 @@ describe("modifyTask", () => {
       config,
     );
 
-    expect(modified.project).toBe("Home");
-    expect(modified.priority).toBe("H");
+    expect(modified).not.toBeNull();
+    expect(modified!.project).toBe("Home");
+    expect(modified!.priority).toBe("H");
   });
 
   it("preserves unmodified attributes", async () => {
@@ -185,8 +200,9 @@ describe("modifyTask", () => {
 
     const modified = await modifyTask(created.uuid, "priority:H", config);
 
-    expect(modified.project).toBe("Home");
-    expect(modified.description).toBe("Buy milk");
+    expect(modified).not.toBeNull();
+    expect(modified!.project).toBe("Home");
+    expect(modified!.description).toBe("Buy milk");
   });
 
   it("returns the task with expected shape", async () => {
@@ -194,9 +210,10 @@ describe("modifyTask", () => {
 
     const modified = await modifyTask(created.uuid, "priority:M", config);
 
-    expect(modified.uuid).toBeDefined();
-    expect(modified.description).toBe("Buy milk");
-    expect(modified.status).toBe("pending");
+    expect(modified).not.toBeNull();
+    expect(modified!.uuid).toBeDefined();
+    expect(modified!.description).toBe("Buy milk");
+    expect(modified!.status).toBe("pending");
   });
 
   it("returns null when the task does not exist", async () => {
@@ -206,5 +223,103 @@ describe("modifyTask", () => {
       config,
     );
     expect(result).toBeNull();
+  });
+});
+
+describe("deleteTasks", () => {
+  it("removes matching tasks from the pending list", async () => {
+    const created = await createTask("Buy milk", config);
+
+    await deleteTasks(`uuid:${created.uuid}`, config);
+
+    const tasks = await getTasks("status:pending", config);
+    expect(tasks.some((t) => t.uuid === created.uuid)).toBe(false);
+  });
+
+  it("sets deleted tasks to status deleted", async () => {
+    const created = await createTask("Buy milk", config);
+
+    await deleteTasks(`uuid:${created.uuid}`, config);
+
+    const deleted = await getTask(created.uuid, config);
+    expect(deleted?.status).toBe("deleted");
+  });
+
+  it("deletes multiple tasks matching the filter", async () => {
+    await createTask("Buy milk project:Home", config);
+    await createTask("Walk the dog project:Home", config);
+
+    await deleteTasks("project:Home", config);
+
+    const remaining = await getTasks("project:Home status:pending", config);
+    expect(remaining).toHaveLength(0);
+  });
+
+  it("does nothing when no tasks match the filter", async () => {
+    await createTask("Buy milk", config);
+
+    await expect(
+      deleteTasks("project:Nonexistent", config),
+    ).resolves.not.toThrow();
+
+    const tasks = await getTasks("status:pending", config);
+    expect(tasks).toHaveLength(1);
+  });
+
+  it("only deletes tasks matching the filter, leaving others intact", async () => {
+    const keep = await createTask("Buy milk project:Home", config);
+    await createTask("Walk the dog project:Outdoor", config);
+
+    await deleteTasks("project:Outdoor", config);
+
+    const remaining = await getTasks("status:pending", config);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].uuid).toBe(keep.uuid);
+  });
+});
+
+describe("deleteTask", () => {
+  it("removes the task from the pending list by UUID", async () => {
+    const created = await createTask("Buy milk", config);
+
+    await deleteTask(created.uuid, config);
+
+    const tasks = await getTasks("status:pending", config);
+    expect(tasks.some((t) => t.uuid === created.uuid)).toBe(false);
+  });
+
+  it("removes the task from the pending list by numeric id", async () => {
+    const created = await createTask("Buy milk", config);
+
+    await deleteTask(String(created.id), config);
+
+    const tasks = await getTasks("status:pending", config);
+    expect(tasks.some((t) => t.uuid === created.uuid)).toBe(false);
+  });
+
+  it("sets the task status to deleted", async () => {
+    const created = await createTask("Buy milk", config);
+
+    await deleteTask(created.uuid, config);
+
+    const deleted = await getTask(created.uuid, config);
+    expect(deleted?.status).toBe("deleted");
+  });
+
+  it("does nothing when the task does not exist", async () => {
+    await expect(
+      deleteTask("00000000-0000-0000-0000-000000000000", config),
+    ).resolves.not.toThrow();
+  });
+
+  it("only deletes the specified task, leaving others intact", async () => {
+    const keep = await createTask("Buy milk", config);
+    const toDelete = await createTask("Walk the dog", config);
+
+    await deleteTask(toDelete.uuid, config);
+
+    const remaining = await getTasks("status:pending", config);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].uuid).toBe(keep.uuid);
   });
 });
