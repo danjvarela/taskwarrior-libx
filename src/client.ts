@@ -4,6 +4,12 @@ import {
   createTask,
   modifyTasks,
   modifyTask,
+  doneTasks,
+  doneTask,
+  startTasks,
+  startTask,
+  stopTasks,
+  stopTask,
   deleteTasks,
   deleteTask,
   annotateTasks,
@@ -91,6 +97,77 @@ export function createTaskwarriorClient(config: Config) {
         ...config,
         ...customConfig,
       });
+    },
+
+    /**
+     * Marks all tasks matching the given filter as completed.
+     *
+     * @param filters - A Taskwarrior filter expression to select tasks to complete (e.g. `"project:work status:pending"`).
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to an array of the completed tasks.
+     */
+    async doneTasks(filters: string, customConfig?: Config) {
+      return await doneTasks(filters, { ...config, ...customConfig });
+    },
+
+    /**
+     * Marks a single task identified by its numeric ID or UUID as completed.
+     * Does nothing if the task does not exist.
+     *
+     * @param idOrUUID - The task's numeric ID or UUID string.
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to the completed task, or `null` if not found.
+     */
+    async doneTask(idOrUUID: string, customConfig?: Config) {
+      return await doneTask(idOrUUID, { ...config, ...customConfig });
+    },
+
+    /**
+     * Starts all tasks matching the given filter, recording a start timestamp on each.
+     * Started tasks remain in `pending` status but gain a `start` field.
+     *
+     * @param filters - A Taskwarrior filter expression to select tasks to start (e.g. `"project:work status:pending"`).
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to an array of the started tasks.
+     */
+    async startTasks(filters: string, customConfig?: Config) {
+      return await startTasks(filters, { ...config, ...customConfig });
+    },
+
+    /**
+     * Starts a single task identified by its numeric ID or UUID, recording a start timestamp.
+     * Started tasks remain in `pending` status but gain a `start` field.
+     * Does nothing if the task does not exist.
+     *
+     * @param idOrUUID - The task's numeric ID or UUID string.
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to the started task, or `null` if not found.
+     */
+    async startTask(idOrUUID: string, customConfig?: Config) {
+      return await startTask(idOrUUID, { ...config, ...customConfig });
+    },
+
+    /**
+     * Stops all tasks matching the given filter, clearing their start timestamp.
+     *
+     * @param filters - A Taskwarrior filter expression to select tasks to stop (e.g. `"+ACTIVE project:work"`).
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to an array of the stopped tasks.
+     */
+    async stopTasks(filters: string, customConfig?: Config) {
+      return await stopTasks(filters, { ...config, ...customConfig });
+    },
+
+    /**
+     * Stops a single task identified by its numeric ID or UUID, clearing its start timestamp.
+     * Does nothing if the task does not exist.
+     *
+     * @param idOrUUID - The task's numeric ID or UUID string.
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to the stopped task, or `null` if not found.
+     */
+    async stopTask(idOrUUID: string, customConfig?: Config) {
+      return await stopTask(idOrUUID, { ...config, ...customConfig });
     },
 
     /**

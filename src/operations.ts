@@ -170,6 +170,117 @@ export async function denotateTask(
   );
 }
 
+export async function doneTasks(
+  filters: string,
+  config?: Config,
+): Promise<Task[]> {
+  const filtersSplit = filters.split(" ");
+
+  const tasksBeforeDone = await exportTasks(filtersSplit, config);
+  const uuids = tasksBeforeDone.map((t) => t.uuid);
+
+  if (uuids.length === 0) return [];
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", ...filtersSplit, "done"],
+    { env: buildEnv(config) },
+  );
+
+  return await exportTasks(uuids, config);
+}
+
+export async function doneTask(
+  idOrUUID: string,
+  config?: Config,
+): Promise<Task | null> {
+  const [taskToComplete] = await exportTasks([idOrUUID], config);
+  if (!taskToComplete) return null;
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", idOrUUID, "done"],
+    { env: buildEnv(config) },
+  );
+
+  const [completed] = await exportTasks([taskToComplete.uuid], config);
+  return completed;
+}
+
+export async function startTasks(
+  filters: string,
+  config?: Config,
+): Promise<Task[]> {
+  const filtersSplit = filters.split(" ");
+
+  const tasksBeforeStart = await exportTasks(filtersSplit, config);
+  const uuids = tasksBeforeStart.map((t) => t.uuid);
+
+  if (uuids.length === 0) return [];
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", ...filtersSplit, "start"],
+    { env: buildEnv(config) },
+  );
+
+  return await exportTasks(uuids, config);
+}
+
+export async function startTask(
+  idOrUUID: string,
+  config?: Config,
+): Promise<Task | null> {
+  const [taskToStart] = await exportTasks([idOrUUID], config);
+  if (!taskToStart) return null;
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", idOrUUID, "start"],
+    { env: buildEnv(config) },
+  );
+
+  const [started] = await exportTasks([idOrUUID], config);
+  return started;
+}
+
+export async function stopTasks(
+  filters: string,
+  config?: Config,
+): Promise<Task[]> {
+  const filtersSplit = filters.split(" ");
+
+  const tasksBeforeStop = await exportTasks(filtersSplit, config);
+  const uuids = tasksBeforeStop.map((t) => t.uuid);
+
+  if (uuids.length === 0) return [];
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", ...filtersSplit, "stop"],
+    { env: buildEnv(config) },
+  );
+
+  return await exportTasks(uuids, config);
+}
+
+export async function stopTask(
+  idOrUUID: string,
+  config?: Config,
+): Promise<Task | null> {
+  const [taskToStop] = await exportTasks([idOrUUID], config);
+  if (!taskToStop) return null;
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", idOrUUID, "stop"],
+    { env: buildEnv(config) },
+  );
+
+  const [stopped] = await exportTasks([idOrUUID], config);
+  return stopped;
+}
+
 export async function deleteTasks(
   filters: string,
   config?: Config,

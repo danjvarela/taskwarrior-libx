@@ -8,6 +8,12 @@ import {
   createTask,
   modifyTasks,
   modifyTask,
+  doneTasks,
+  doneTask,
+  startTasks,
+  startTask,
+  stopTasks,
+  stopTask,
   deleteTasks,
   deleteTask,
   annotateTasks,
@@ -441,5 +447,162 @@ describe("denotateTasks", () => {
     await expect(
       denotateTasks("project:Nonexistent", "Some note", config),
     ).resolves.not.toThrow();
+  });
+});
+
+describe("doneTask", () => {
+  it("marks the task as completed by UUID", async () => {
+    const created = await createTask("Buy milk", config);
+
+    const completed = await doneTask(created.uuid, config);
+
+    expect(completed).not.toBeNull();
+    expect(completed!.status).toBe("completed");
+    expect(completed!.uuid).toBe(created.uuid);
+  });
+
+  it("marks the task as completed by numeric id", async () => {
+    const created = await createTask("Buy milk", config);
+
+    const completed = await doneTask(String(created.id), config);
+
+    expect(completed).not.toBeNull();
+    expect(completed!.status).toBe("completed");
+  });
+
+  it("sets the end timestamp", async () => {
+    const created = await createTask("Buy milk", config);
+
+    const completed = await doneTask(created.uuid, config);
+
+    expect(completed!.end).toBeDefined();
+  });
+
+  it("returns null when the task does not exist", async () => {
+    const result = await doneTask("00000000-0000-0000-0000-000000000000", config);
+    expect(result).toBeNull();
+  });
+});
+
+describe("doneTasks", () => {
+  it("marks all matching tasks as completed", async () => {
+    await createTask("Buy milk project:Home", config);
+    await createTask("Walk the dog project:Home", config);
+
+    const completed = await doneTasks("project:Home", config);
+
+    expect(completed).toHaveLength(2);
+    expect(completed.every((t) => t.status === "completed")).toBe(true);
+  });
+
+  it("returns an empty array when no tasks match the filter", async () => {
+    const completed = await doneTasks("project:Nonexistent", config);
+    expect(completed).toEqual([]);
+  });
+
+  it("only completes tasks matching the filter, leaving others pending", async () => {
+    await createTask("Buy milk project:Home", config);
+    await createTask("Walk the dog project:Outdoor", config);
+
+    await doneTasks("project:Home", config);
+
+    const remaining = await getTasks("status:pending", config);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].project).toBe("Outdoor");
+  });
+});
+
+describe("startTask", () => {
+  it("sets the start timestamp by UUID", async () => {
+    const created = await createTask("Buy milk", config);
+
+    const started = await startTask(created.uuid, config);
+
+    expect(started).not.toBeNull();
+    expect(started!.start).toBeDefined();
+  });
+
+  it("sets the start timestamp by numeric id", async () => {
+    const created = await createTask("Buy milk", config);
+
+    const started = await startTask(String(created.id), config);
+
+    expect(started).not.toBeNull();
+    expect(started!.start).toBeDefined();
+  });
+
+  it("preserves status as pending", async () => {
+    const created = await createTask("Buy milk", config);
+
+    const started = await startTask(created.uuid, config);
+
+    expect(started!.status).toBe("pending");
+  });
+
+  it("returns null when the task does not exist", async () => {
+    const result = await startTask("00000000-0000-0000-0000-000000000000", config);
+    expect(result).toBeNull();
+  });
+});
+
+describe("startTasks", () => {
+  it("sets the start timestamp on all matching tasks", async () => {
+    await createTask("Buy milk project:Home", config);
+    await createTask("Walk the dog project:Home", config);
+
+    const started = await startTasks("project:Home", config);
+
+    expect(started).toHaveLength(2);
+    expect(started.every((t) => t.start !== undefined)).toBe(true);
+  });
+
+  it("returns an empty array when no tasks match the filter", async () => {
+    const started = await startTasks("project:Nonexistent", config);
+    expect(started).toEqual([]);
+  });
+});
+
+describe("stopTask", () => {
+  it("clears the start timestamp by UUID", async () => {
+    const created = await createTask("Buy milk", config);
+    await startTask(created.uuid, config);
+
+    const stopped = await stopTask(created.uuid, config);
+
+    expect(stopped).not.toBeNull();
+    expect(stopped!.start).toBeUndefined();
+  });
+
+  it("clears the start timestamp by numeric id", async () => {
+    const created = await createTask("Buy milk", config);
+    await startTask(created.uuid, config);
+
+    const stopped = await stopTask(String(created.id), config);
+
+    expect(stopped).not.toBeNull();
+    expect(stopped!.start).toBeUndefined();
+  });
+
+  it("returns null when the task does not exist", async () => {
+    const result = await stopTask("00000000-0000-0000-0000-000000000000", config);
+    expect(result).toBeNull();
+  });
+});
+
+describe("stopTasks", () => {
+  it("clears the start timestamp on all matching started tasks", async () => {
+    await createTask("Buy milk project:Home", config);
+    await createTask("Walk the dog project:Home", config);
+    await startTasks("project:Home", config);
+
+    const stopped = await stopTasks("project:Home +ACTIVE", config);
+
+    expect(stopped).toHaveLength(2);
+    expect(stopped.every((t) => t.start === undefined)).toBe(true);
+  });
+
+  it("returns an empty array when no tasks match the filter", async () => {
+    const stopped = await stopTasks("project:Nonexistent", config);
+    expect(stopped).toEqual([]);
   });
 });
