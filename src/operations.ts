@@ -1,0 +1,100 @@
+import { execFile } from "child_process";
+import { promisify } from "util";
+import type { Task } from "./task.js";
+import type { Config } from "./config.js";
+
+const execFileAsync = promisify(execFile);
+
+async function exportTasks(args: string[], config?: Config): Promise<Task[]> {
+  const res = await execFileAsync("task", [...args, "export"], {
+    env: buildEnv(config),
+  });
+  return JSON.parse(res.stdout || "[]") as Task[];
+}
+
+function buildEnv(env?: {
+  taskRc?: string;
+  taskData?: string;
+}): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    ...(env?.taskRc ? { TASKRC: env.taskRc } : {}),
+    ...(env?.taskData ? { TASKDATA: env.taskData } : {}),
+  };
+}
+
+export async function getTasks(
+  filters: string,
+  config?: Config,
+): Promise<Task[]> {
+  const filtersSplit = filters.split(" ");
+  return await exportTasks(filtersSplit, config);
+}
+
+export async function getTask(
+  idOrUUID: string,
+  config?: Config,
+): Promise<Task | null> {
+  const [task] = await exportTasks([idOrUUID], config);
+  return task ?? null;
+}
+
+export async function createTask(args: string, config?: Config): Promise<Task> {
+  const argsSplit = args.split(" ");
+  const createdRes = await execFileAsync(
+    "task",
+    ["rc.verbose=new-uuid", "add", ...argsSplit],
+    {
+      env: buildEnv(config),
+    },
+  );
+
+  const match = createdRes.stdout.match(/Created task ([a-f0-9-]+)\./);
+
+  const createdUUID = match?.[1]!;
+
+  const [created] = await exportTasks([createdUUID], config);
+  return created;
+}
+
+export async function modifyTasks(
+  filters: string,
+  modifications: string,
+  config?: Config,
+): Promise<Task[]> {
+  const filtersSplit = filters.split(" ");
+  const modificationsSplit = modifications.split(" ");
+
+  const tasksBeforeModify = await exportTasks(filtersSplit, config);
+  const uuids = tasksBeforeModify.map((t) => t.uuid);
+
+  if (uuids.length === 0) return [];
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", ...filtersSplit, "modify", ...modificationsSplit],
+    { env: buildEnv(config) },
+  );
+
+  return await exportTasks(uuids, config);
+}
+
+export async function modifyTask(
+  idOrUUID: string,
+  modifications: string,
+  config?: Config,
+): Promise<Task | null> {
+  const modificationsSplit = modifications.split(" ");
+
+  const [taskToModify] = await exportTasks([idOrUUID], config);
+  if (!taskToModify) return null;
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", idOrUUID, "modify", ...modificationsSplit],
+    { env: buildEnv(config) },
+  );
+
+  const [updated] = await exportTasks([idOrUUID], config);
+  return updated;
+}
