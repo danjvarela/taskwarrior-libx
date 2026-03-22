@@ -329,3 +329,29 @@ export async function importTasks(
 
   return await exportTasks(uuids, config);
 }
+
+export async function duplicateTask(
+  idOrUUID: string,
+  modifications?: string,
+  config?: Config,
+): Promise<Task | null> {
+  const [taskToDuplicate] = await exportTasks([idOrUUID], config);
+  if (!taskToDuplicate) return null;
+
+  const res = await execFileAsync(
+    "task",
+    [
+      "rc.verbose=new-uuid",
+      idOrUUID,
+      "duplicate",
+      ...(modifications?.split(" ") ?? []),
+    ],
+    { env: buildEnv(config) },
+  );
+
+  const match = res.stdout.match(/Created task ([a-f0-9-]+)\./);
+  const duplicatedTaskUUID = match![1];
+
+  const [duplicatedTask] = await exportTasks([duplicatedTaskUUID], config);
+  return duplicatedTask;
+}

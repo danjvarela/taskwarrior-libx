@@ -17,6 +17,7 @@ import {
   denotateTasks,
   denotateTask,
   importTasks,
+  duplicateTask,
 } from "./operations.js";
 import type { Config } from "./config.js";
 
@@ -281,6 +282,27 @@ export function createTaskwarriorClient(config: Config) {
      */
     async importTasks(json: string, customConfig?: Config) {
       return await importTasks(json, { ...config, ...customConfig });
+    },
+
+    /**
+     * Duplicates a single task identified by its numeric ID or UUID.
+     * The duplicate is a new task with a new UUID that inherits all attributes from the original.
+     * Optional modifications are applied to the duplicate, leaving the original unchanged.
+     *
+     * @param idOrUUID - The task's numeric ID or UUID string.
+     * @param modifications - Optional string of Taskwarrior modification arguments to apply to the duplicate (e.g. `"project:Work priority:L"`).
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to the duplicated task, or `null` if the original was not found.
+     */
+    async duplicateTask(
+      idOrUUID: string,
+      modifications?: string,
+      customConfig?: Config,
+    ) {
+      return await duplicateTask(idOrUUID, modifications, {
+        ...config,
+        ...customConfig,
+      });
     },
   };
 }

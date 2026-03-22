@@ -21,6 +21,7 @@ import {
   denotateTasks,
   denotateTask,
   importTasks,
+  duplicateTask,
 } from "../src/operations";
 import type { Config } from "../src/config";
 
@@ -663,5 +664,55 @@ describe("importTasks", () => {
     const [task] = await importTasks(json, config);
 
     expect(task.uuid).toBe(uuid);
+  });
+});
+
+describe("duplicateTask", () => {
+  it("returns a new task with the same description", async () => {
+    const original = await createTask("Buy milk", config);
+    const duplicate = await duplicateTask(original.uuid, undefined, config);
+
+    expect(duplicate).not.toBeNull();
+    expect(duplicate!.uuid).not.toBe(original.uuid);
+    expect(duplicate!.description).toBe(original.description);
+  });
+
+  it("works with a numeric id", async () => {
+    const original = await createTask("Walk the dog", config);
+    const duplicate = await duplicateTask(String(original.id), undefined, config);
+
+    expect(duplicate).not.toBeNull();
+    expect(duplicate!.uuid).not.toBe(original.uuid);
+    expect(duplicate!.description).toBe(original.description);
+  });
+
+  it("inherits all attributes of the original", async () => {
+    const original = await createTask("Buy milk project:Home priority:H", config);
+    const duplicate = await duplicateTask(original.uuid, undefined, config);
+
+    expect(duplicate!.project).toBe(original.project);
+    expect(duplicate!.priority).toBe(original.priority);
+  });
+
+  it("applies modifications to the duplicate", async () => {
+    const original = await createTask("Buy milk project:Home priority:H", config);
+    const duplicate = await duplicateTask(original.uuid, "project:Work priority:L", config);
+
+    expect(duplicate!.description).toBe(original.description);
+    expect(duplicate!.project).toBe("Work");
+    expect(duplicate!.priority).toBe("L");
+  });
+
+  it("does not modify the original task", async () => {
+    const original = await createTask("Buy milk project:Home", config);
+    await duplicateTask(original.uuid, "project:Work", config);
+
+    const unchanged = await getTask(original.uuid, config);
+    expect(unchanged!.project).toBe("Home");
+  });
+
+  it("returns null when the task does not exist", async () => {
+    const result = await duplicateTask("00000000-0000-0000-0000-000000000000", undefined, config);
+    expect(result).toBeNull();
   });
 });
