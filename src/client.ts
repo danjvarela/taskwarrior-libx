@@ -6,6 +6,10 @@ import {
   modifyTask,
   deleteTasks,
   deleteTask,
+  annotateTasks,
+  annotateTask,
+  denotateTasks,
+  denotateTask,
 } from "./operations.js";
 import type { Config } from "./config.js";
 
@@ -110,6 +114,83 @@ export function createTaskwarriorClient(config: Config) {
      */
     async deleteTask(idOrUUID: string, customConfig?: Config): Promise<void> {
       return await deleteTask(idOrUUID, { ...config, ...customConfig });
+    },
+
+    /**
+     * Adds an annotation to all tasks matching the given filter string.
+     *
+     * @param filters - A Taskwarrior filter expression to select tasks to annotate (e.g. `"project:work status:pending"`).
+     * @param annotation - The annotation text to add.
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to an array of the annotated tasks.
+     */
+    async annotateTasks(
+      filters: string,
+      annotation: string,
+      customConfig?: Config,
+    ) {
+      return await annotateTasks(filters, annotation, {
+        ...config,
+        ...customConfig,
+      });
+    },
+
+    /**
+     * Adds an annotation to a single task identified by its numeric ID or UUID.
+     *
+     * @param idOrUUID - The task's numeric ID or UUID string.
+     * @param annotation - The annotation text to add.
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise resolving to the annotated task, or `null` if not found.
+     */
+    async annotateTask(
+      idOrUUID: string,
+      annotation: string,
+      customConfig?: Config,
+    ) {
+      return await annotateTask(idOrUUID, annotation, {
+        ...config,
+        ...customConfig,
+      });
+    },
+
+    /**
+     * Removes a matching annotation from all tasks matching the given filter string.
+     *
+     * @param filters - A Taskwarrior filter expression to select tasks to denotate (e.g. `"project:work status:pending"`).
+     * @param annotation - The annotation text to remove (matched as a substring).
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise that resolves when the denotation is complete.
+     */
+    async denotateTasks(
+      filters: string,
+      annotation: string,
+      customConfig?: Config,
+    ): Promise<void> {
+      return await denotateTasks(filters, annotation, {
+        ...config,
+        ...customConfig,
+      });
+    },
+
+    /**
+     * Removes a matching annotation from a single task identified by its numeric ID or UUID.
+     * Does nothing if the task does not exist.
+     *
+     * @param idOrUUID - The task's numeric ID or UUID string.
+     * @param annotation - The annotation text to remove (matched as a substring).
+     * @param customConfig - Optional config overrides for this call.
+     * @returns A promise that resolves when the denotation is complete.
+     */
+    async denotateTask(
+      idOrUUID: string,
+      annotation: string,
+      customConfig?: Config,
+    ): Promise<void> {
+      return await denotateTask(idOrUUID, annotation, {
+        ...config,
+        ...customConfig,
+      });
     },
   };
 }

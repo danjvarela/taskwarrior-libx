@@ -99,6 +99,77 @@ export async function modifyTask(
   return updated;
 }
 
+export async function annotateTasks(
+  filters: string,
+  annotation: string,
+  config?: Config,
+): Promise<Task[]> {
+  const filtersSplit = filters.split(" ");
+
+  const tasksBeforeAnnotate = await exportTasks(filtersSplit, config);
+  const uuids = tasksBeforeAnnotate.map((t) => t.uuid);
+
+  if (uuids.length === 0) return [];
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", ...filtersSplit, "annotate", annotation],
+    { env: buildEnv(config) },
+  );
+
+  return await exportTasks(uuids, config);
+}
+
+export async function annotateTask(
+  idOrUUID: string,
+  annotation: string,
+  config?: Config,
+): Promise<Task | null> {
+  const [taskToAnnotate] = await exportTasks([idOrUUID], config);
+  if (!taskToAnnotate) return null;
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", idOrUUID, "annotate", annotation],
+    { env: buildEnv(config) },
+  );
+
+  const [updated] = await exportTasks([idOrUUID], config);
+  return updated;
+}
+
+export async function denotateTasks(
+  filters: string,
+  annotation: string,
+  config?: Config,
+): Promise<void> {
+  const filtersSplit = filters.split(" ");
+
+  const tasksToDenotate = await exportTasks(filtersSplit, config);
+  if (!tasksToDenotate.length) return;
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", ...filtersSplit, "denotate", annotation],
+    { env: buildEnv(config) },
+  );
+}
+
+export async function denotateTask(
+  idOrUUID: string,
+  annotation: string,
+  config?: Config,
+): Promise<void> {
+  const [taskToDenotate] = await exportTasks([idOrUUID], config);
+  if (!taskToDenotate) return;
+
+  await execFileAsync(
+    "task",
+    ["rc.confirmation=off", idOrUUID, "denotate", annotation],
+    { env: buildEnv(config) },
+  );
+}
+
 export async function deleteTasks(
   filters: string,
   config?: Config,
@@ -126,3 +197,4 @@ export async function deleteTask(
     env: buildEnv(config),
   });
 }
+

@@ -10,6 +10,10 @@ import {
   modifyTask,
   deleteTasks,
   deleteTask,
+  annotateTasks,
+  annotateTask,
+  denotateTasks,
+  denotateTask,
 } from "../src/operations";
 import type { Config } from "../src/config";
 
@@ -321,5 +325,121 @@ describe("deleteTask", () => {
     const remaining = await getTasks("status:pending", config);
     expect(remaining).toHaveLength(1);
     expect(remaining[0].uuid).toBe(keep.uuid);
+  });
+});
+
+describe("annotateTask", () => {
+  it("adds an annotation to a task by UUID", async () => {
+    const created = await createTask("Buy milk", config);
+
+    const annotated = await annotateTask(created.uuid, "Check expiry date", config);
+
+    expect(annotated).not.toBeNull();
+    expect(annotated!.annotations).toHaveLength(1);
+    expect(annotated!.annotations![0].description).toBe("Check expiry date");
+  });
+
+  it("adds an annotation to a task by numeric id", async () => {
+    const created = await createTask("Buy milk", config);
+
+    const annotated = await annotateTask(String(created.id), "Check expiry date", config);
+
+    expect(annotated).not.toBeNull();
+    expect(annotated!.annotations).toHaveLength(1);
+    expect(annotated!.annotations![0].description).toBe("Check expiry date");
+  });
+
+  it("preserves existing task attributes", async () => {
+    const created = await createTask("Buy milk project:Home", config);
+
+    const annotated = await annotateTask(created.uuid, "Check expiry date", config);
+
+    expect(annotated).not.toBeNull();
+    expect(annotated!.project).toBe("Home");
+    expect(annotated!.description).toBe("Buy milk");
+  });
+
+  it("returns null when the task does not exist", async () => {
+    const result = await annotateTask(
+      "00000000-0000-0000-0000-000000000000",
+      "Some note",
+      config,
+    );
+    expect(result).toBeNull();
+  });
+});
+
+describe("annotateTasks", () => {
+  it("adds an annotation to all matching tasks", async () => {
+    await createTask("Buy milk project:Home", config);
+    await createTask("Walk the dog project:Home", config);
+
+    const annotated = await annotateTasks("project:Home", "Needs attention", config);
+
+    expect(annotated).toHaveLength(2);
+    expect(annotated.every((t) => t.annotations?.some((a) => a.description === "Needs attention"))).toBe(true);
+  });
+
+  it("returns an empty array when no tasks match the filter", async () => {
+    const annotated = await annotateTasks("project:Nonexistent", "Some note", config);
+    expect(annotated).toEqual([]);
+  });
+
+  it("returns tasks with the annotation and preserves existing attributes", async () => {
+    const created = await createTask("Buy milk project:Home", config);
+
+    const [annotated] = await annotateTasks(`uuid:${created.uuid}`, "Check stock", config);
+
+    expect(annotated.uuid).toBe(created.uuid);
+    expect(annotated.project).toBe("Home");
+    expect(annotated.annotations).toHaveLength(1);
+    expect(annotated.annotations![0].description).toBe("Check stock");
+  });
+});
+
+describe("denotateTask", () => {
+  it("removes an annotation from a task by UUID", async () => {
+    const created = await createTask("Buy milk", config);
+    await annotateTask(created.uuid, "Check expiry date", config);
+
+    await denotateTask(created.uuid, "Check expiry date", config);
+
+    const task = await getTask(created.uuid, config);
+    expect(task!.annotations ?? []).toHaveLength(0);
+  });
+
+  it("removes an annotation from a task by numeric id", async () => {
+    const created = await createTask("Buy milk", config);
+    await annotateTask(created.uuid, "Check expiry date", config);
+
+    await denotateTask(String(created.id), "Check expiry date", config);
+
+    const task = await getTask(created.uuid, config);
+    expect(task!.annotations ?? []).toHaveLength(0);
+  });
+
+  it("does nothing when the task does not exist", async () => {
+    await expect(
+      denotateTask("00000000-0000-0000-0000-000000000000", "Some note", config),
+    ).resolves.not.toThrow();
+  });
+});
+
+describe("denotateTasks", () => {
+  it("removes a matching annotation from all matching tasks", async () => {
+    await createTask("Buy milk project:Home", config);
+    await createTask("Walk the dog project:Home", config);
+    await annotateTasks("project:Home", "Needs attention", config);
+
+    await denotateTasks("project:Home", "Needs attention", config);
+
+    const tasks = await getTasks("project:Home", config);
+    expect(tasks.every((t) => (t.annotations ?? []).length === 0)).toBe(true);
+  });
+
+  it("does nothing when no tasks match the filter", async () => {
+    await expect(
+      denotateTasks("project:Nonexistent", "Some note", config),
+    ).resolves.not.toThrow();
   });
 });
