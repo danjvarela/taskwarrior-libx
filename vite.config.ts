@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
@@ -13,4 +13,7 @@ export default defineConfig({
     ssr: true,
   },
   plugins: [dts()],
+  test: {
+    environment: "node",
+  },
 });
