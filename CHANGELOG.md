@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/danjvarela/taskwarrior-libx/compare/v1.2.1...v1.2.2) (2026-03-23)
+
+
+### Bug Fixes
+
+* remove registry-url from setup-node to fix trusted publishing ([a5bfc0c](https://github.com/danjvarela/taskwarrior-libx/commit/a5bfc0c1f3df67c1d5c972cfc678dab484db9978))
+
 ## [1.2.1](https://github.com/danjvarela/taskwarrior-libx/compare/v1.2.0...v1.2.1) (2026-03-23)
 
 

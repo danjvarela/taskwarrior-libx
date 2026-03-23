@@ -1,6 +1,6 @@
 {
   "name": "taskwarrior-libx",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A Node.js TypeScript library that wraps the Taskwarrior CLI. Provides a typed, promise-based API for managing tasks programmatically.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
