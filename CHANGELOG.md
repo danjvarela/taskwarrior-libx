@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/danjvarela/taskwarrior-libx/compare/v1.0.0...v1.1.0) (2026-03-23)
+
+
+### Bug Fixes
+
+* add repository field to package.json for provenance verification ([8390d2a](https://github.com/danjvarela/taskwarrior-libx/commit/8390d2a99f285cceb3755fdeb730f3cb54d432f6))
+
+
+### Features
+
+* initial implementation ([958b0e2](https://github.com/danjvarela/taskwarrior-libx/commit/958b0e207c013c5430df8f25762e08d798460078))
+
 # 1.0.0 (2026-03-23)
 
 
