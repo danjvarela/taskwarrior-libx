@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/danjvarela/taskwarrior-libx/compare/v1.2.0...v1.2.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* use publishConfig provenance for trusted publishing ([c6bee44](https://github.com/danjvarela/taskwarrior-libx/commit/c6bee4447f41b180484e570e6428aac2bfc3d753))
+
 # [1.2.0](https://github.com/danjvarela/taskwarrior-libx/compare/v1.1.0...v1.2.0) (2026-03-22)
 
 
